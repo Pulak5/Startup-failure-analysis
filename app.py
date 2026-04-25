@@ -44,8 +44,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ── DATA LOADING ──────────────────────────────────────────────────────────────
-# Kept exactly as in notebook — same column names, same logic
 @st.cache_data
 def load_data():
     df = pd.read_csv("startup_failures.csv")
@@ -84,7 +82,6 @@ def load_data():
         if '<' in x: return convert_to_million(x.replace('<', '').strip())
         return convert_to_million(x)
 
-    # Column name kept as Funding_clean — same as notebook
     df['Funding_clean'] = df['Funding Amount'].apply(clean_funding)
     df['Funding_clean'] = df['Funding_clean'].fillna(df['Funding_clean'].median())
 
@@ -112,7 +109,6 @@ CAUSE_COLORS = {
 }
 
 
-# ── SIDEBAR ───────────────────────────────────────────────────────────────────
 st.sidebar.title("📉 Startup Failures")
 st.sidebar.markdown("---")
 
@@ -148,11 +144,6 @@ fd = df[
 
 st.sidebar.markdown(f"---\n**{len(fd)} startups** in view")
 
-
-# ── PLOT HELPER ───────────────────────────────────────────────────────────────
-# FIX: base_layout() takes no xaxis/yaxis — those are passed separately per
-# chart using fig.update_xaxes() / fig.update_yaxes() to avoid the
-# "multiple values for keyword argument" TypeError.
 def base_layout(height=300, **extra):
     layout = dict(
         paper_bgcolor='white',
@@ -176,9 +167,6 @@ def analysis(text):
     st.markdown(f'<div class="analysis-box">{text}</div>', unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════
-# PAGE 1 — OVERVIEW
-# ═══════════════════════════════════════════════════════════════
 if page == "Overview":
     st.title("Startup Failure Analysis")
     st.caption("Source: Failory.com · Post-mortem dataset · 470+ startup post-mortems")
@@ -281,9 +269,6 @@ if page == "Overview":
     )
 
 
-# ═══════════════════════════════════════════════════════════════
-# PAGE 2 — FAILURE ANALYSIS
-# ═══════════════════════════════════════════════════════════════
 elif page == "Failure Analysis":
     st.title("Failure Analysis")
     st.caption("Cause breakdowns · Industry patterns · Employee size")
@@ -383,9 +368,6 @@ elif page == "Failure Analysis":
     )
 
 
-# ═══════════════════════════════════════════════════════════════
-# PAGE 3 — SURVIVAL & FUNDING
-# ═══════════════════════════════════════════════════════════════
 elif page == "Survival & Funding":
     st.title("Survival & Funding")
     st.caption("Lifespan distributions · Funding patterns · Correlations")
@@ -518,16 +500,10 @@ elif page == "Survival & Funding":
     )
 
 
-# ═══════════════════════════════════════════════════════════════
-# PAGE 4 — KNN CLASSIFIER
-# ═══════════════════════════════════════════════════════════════
 elif page == "KNN Classifier":
     st.title("KNN Classifier")
     st.caption("Predicting failure cause · Features: funding, industry, lifetime")
 
-    # ── MODEL: Exact replica of notebook ─────────────────────────────────────
-    # Notebook uses full df, maps y on raw 'Failure Cause', no dropna on rows,
-    # no stratify, k=8, weights='distance', random_state=42
     @st.cache_data
     def prep_knn(df):
         mapping = {
@@ -547,7 +523,6 @@ elif page == "KNN Classifier":
         X = pd.concat([df[['Funding_clean', 'Lifetime']], industry], axis=1)
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
-        # train_test_split with no stratify — exactly as in notebook
         X_train, X_test, y_train, y_test = train_test_split(
             X_scaled, y_raw, test_size=0.2, random_state=42
         )
@@ -575,7 +550,7 @@ elif page == "KNN Classifier":
         m3.metric("Test samples", len(y_test))
 
     analysis(
-        f"<b>Model accuracy: ~{acc:.1%}</b> — this matches the notebook result of ~42.1% (at k=8). "
+        f"<b>Model accuracy: ~{acc:.1%}</b> ~42.1% (at k=8). "
         "The model is about <b>2.5× better than random guessing</b> (random would be ~16.7% for 6 classes). "
         "The relatively low accuracy is expected and is explained by: "
         "(1) the dataset is small and imbalanced — some classes have very few samples; "
@@ -595,7 +570,7 @@ elif page == "KNN Classifier":
         with st.spinner("Running cross-validation..."):
             cv_scores = [
                 cross_val_score(
-                    KNeighborsClassifier(n_neighbors=ki),  # no weights — matches notebook CV
+                    KNeighborsClassifier(n_neighbors=ki),  
                     X_scaled, y_raw, cv=5, scoring='accuracy'
                 ).mean()
                 for ki in k_range
@@ -652,16 +627,10 @@ elif page == "KNN Classifier":
     )
 
 
-# ═══════════════════════════════════════════════════════════════
-# PAGE 5 — LINEAR REGRESSION
-# ═══════════════════════════════════════════════════════════════
 elif page == "Linear Regression":
     st.title("Linear Regression")
     st.caption("Predicting startup lifetime · Features: funding, industry")
 
-    # ── MODEL: Exact replica of notebook ─────────────────────────────────────
-    # Notebook uses full df (no Lifetime > 0 filter), Funding_clean column,
-    # pd.get_dummies(df['Industry']) with no drop_first, random_state=42
     @st.cache_data
     def run_reg(df):
         X = df[['Funding_clean']]
@@ -777,18 +746,12 @@ elif page == "Linear Regression":
         "more funding extends lifespan only modestly."
     )
 
-
-# ═══════════════════════════════════════════════════════════════
-# PAGE 6 — PREDICTOR TOOL
-# ═══════════════════════════════════════════════════════════════
 elif page == "Predictor Tool":
     st.title("Failure Predictor")
     st.caption("Enter startup details · Get predicted failure cause + estimated lifetime")
 
-    # Train on full df using the exact same setup as the notebook pages
     @st.cache_resource
     def train_models(df):
-        # KNN — notebook setup
         mapping = {
             'Lack of Funds': 'Financial', 'Mismanagement of Funds': 'Financial',
             'No Market Need': 'Market', 'Bad Market Fit': 'Market',
@@ -810,7 +773,6 @@ elif page == "Predictor Tool":
         X_cls_s = sc.fit_transform(X_cls_v)
         knn = KNeighborsClassifier(n_neighbors=8, weights='distance').fit(X_cls_s, y_cls_v)
 
-        # Regression — notebook setup (full df, no filter)
         X_reg = pd.concat([df[['Funding_clean']], pd.get_dummies(df['Industry'])], axis=1)
         y_reg = np.log1p(df['Lifetime'])
         valid_r = y_reg.notna() & X_reg.notna().all(axis=1)
@@ -832,7 +794,6 @@ elif page == "Predictor Tool":
     with col_out:
         st.subheader("Prediction")
         if predict:
-            # KNN input row
             row = {c: 0 for c in cls_cols}
             row['Funding_clean'] = funding
             row['Lifetime'] = lifetime
@@ -843,7 +804,6 @@ elif page == "Predictor Tool":
             proba = knn.predict_proba(Xnew)[0]
             classes = knn.classes_
 
-            # Regression input row
             row2 = {c: 0 for c in reg_cols}
             row2['Funding_clean'] = funding
             if sel_industry in reg_cols:
