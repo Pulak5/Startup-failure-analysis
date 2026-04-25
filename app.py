@@ -550,7 +550,7 @@ elif page == "KNN Classifier":
         m3.metric("Test samples", len(y_test))
 
     analysis(
-        f"<b>Model accuracy: ~{acc:.1%}</b> ~42.1% (at k=8). "
+        f"<b>Model accuracy: ~{acc:.1%}</b>. "
         "The model is about <b>2.5× better than random guessing</b> (random would be ~16.7% for 6 classes). "
         "The relatively low accuracy is expected and is explained by: "
         "(1) the dataset is small and imbalanced — some classes have very few samples; "
