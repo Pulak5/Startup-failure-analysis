@@ -19,7 +19,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .block-container { padding-top: 2rem; }
+    .block-container { padding-top: 1rem; }
     .metric-box {
         background: #f8f9fa;
         border-left: 4px solid #e63946;
@@ -40,6 +40,9 @@ st.markdown("""
         line-height: 1.7;
     }
     .analysis-box b { color: #111; }
+    /* hide default sidebar completely */
+    [data-testid="stSidebar"] { display: none; }
+    [data-testid="collapsedControl"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -109,10 +112,11 @@ CAUSE_COLORS = {
 }
 
 
-st.sidebar.title("📉 Startup Failures")
-st.sidebar.markdown("---")
+st.markdown("## 📉 Startup Failure Analysis")
+st.caption("Source: Failory.com · Post-mortem dataset · 470+ startup post-mortems")
+st.markdown("---")
 
-page = st.sidebar.radio("Go to", [
+tabs = st.tabs([
     "Overview",
     "Failure Analysis",
     "Survival & Funding",
@@ -121,28 +125,8 @@ page = st.sidebar.radio("Go to", [
     "Predictor Tool"
 ])
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("Filters")
+fd = df.copy()
 
-industries = sorted(df['Industry'].dropna().unique())
-sel_ind = st.sidebar.multiselect("Industry", industries, default=industries)
-if not sel_ind: sel_ind = industries
-
-year_min = int(df['Closed in'].min())
-year_max = int(df['Closed in'].max())
-year_range = st.sidebar.slider("Year closed", year_min, year_max, (year_min, year_max))
-
-causes = sorted(df['Cause_group'].dropna().unique())
-sel_causes = st.sidebar.multiselect("Failure cause", causes, default=causes)
-if not sel_causes: sel_causes = causes
-
-fd = df[
-    df['Industry'].isin(sel_ind) &
-    df['Closed in'].between(*year_range) &
-    df['Cause_group'].isin(sel_causes)
-].copy()
-
-st.sidebar.markdown(f"---\n**{len(fd)} startups** in view")
 
 def base_layout(height=300, **extra):
     layout = dict(
@@ -167,9 +151,8 @@ def analysis(text):
     st.markdown(f'<div class="analysis-box">{text}</div>', unsafe_allow_html=True)
 
 
-if page == "Overview":
-    st.title("Startup Failure Analysis")
-    st.caption("Source: Failory.com · Post-mortem dataset · 180+ startup post-mortems")
+with tabs[0]:
+    st.subheader("Overview")
 
     c1, c2, c3, c4, c5 = st.columns(5)
     avg_life = fd['Lifetime'].mean()
@@ -269,8 +252,8 @@ if page == "Overview":
     )
 
 
-elif page == "Failure Analysis":
-    st.title("Failure Analysis")
+with tabs[1]:
+    st.subheader("Failure Analysis")
     st.caption("Cause breakdowns · Industry patterns · Employee size")
 
     st.subheader("Raw failure causes")
@@ -367,9 +350,8 @@ elif page == "Failure Analysis":
         "is the key differentiator."
     )
 
-
-elif page == "Survival & Funding":
-    st.title("Survival & Funding")
+with tabs[2]:
+    st.subheader("Survival & Funding")
     st.caption("Lifespan distributions · Funding patterns · Correlations")
 
     col1, col2 = st.columns(2)
@@ -500,8 +482,8 @@ elif page == "Survival & Funding":
     )
 
 
-elif page == "KNN Classifier":
-    st.title("KNN Classifier")
+with tabs[3]:
+    st.subheader("KNN Classifier")
     st.caption("Predicting failure cause · Features: funding, industry, lifetime")
 
     @st.cache_data
@@ -570,7 +552,7 @@ elif page == "KNN Classifier":
         with st.spinner("Running cross-validation..."):
             cv_scores = [
                 cross_val_score(
-                    KNeighborsClassifier(n_neighbors=ki),  
+                    KNeighborsClassifier(n_neighbors=ki),
                     X_scaled, y_raw, cv=5, scoring='accuracy'
                 ).mean()
                 for ki in k_range
@@ -627,8 +609,8 @@ elif page == "KNN Classifier":
     )
 
 
-elif page == "Linear Regression":
-    st.title("Linear Regression")
+with tabs[4]:
+    st.subheader("Linear Regression")
     st.caption("Predicting startup lifetime · Features: funding, industry")
 
     @st.cache_data
@@ -746,8 +728,9 @@ elif page == "Linear Regression":
         "more funding extends lifespan only modestly."
     )
 
-elif page == "Predictor Tool":
-    st.title("Failure Predictor")
+
+with tabs[5]:
+    st.subheader("Predictor Tool")
     st.caption("Enter startup details · Get predicted failure cause + estimated lifetime")
 
     @st.cache_resource
@@ -794,6 +777,7 @@ elif page == "Predictor Tool":
     with col_out:
         st.subheader("Prediction")
         if predict:
+            # KNN input row
             row = {c: 0 for c in cls_cols}
             row['Funding_clean'] = funding
             row['Lifetime'] = lifetime
