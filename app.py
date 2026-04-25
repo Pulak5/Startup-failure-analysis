@@ -169,7 +169,7 @@ def analysis(text):
 
 if page == "Overview":
     st.title("Startup Failure Analysis")
-    st.caption("Source: Failory.com · Post-mortem dataset · 470+ startup post-mortems")
+    st.caption("Source: Failory.com · Post-mortem dataset · 180+ startup post-mortems")
 
     c1, c2, c3, c4, c5 = st.columns(5)
     avg_life = fd['Lifetime'].mean()
