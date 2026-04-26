@@ -113,7 +113,7 @@ CAUSE_COLORS = {
 
 
 st.markdown("## 📉 Startup Failure Analysis")
-st.caption("Source: Failory.com · Post-mortem dataset · 470+ startup post-mortems")
+st.caption("Source: Failory.com · Post-mortem dataset · 180+ startup post-mortems")
 st.markdown("---")
 
 tabs = st.tabs([
